@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Leselicht</title>
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-title" content="Leselicht">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#15100b">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800&display=swap">
+<style>
+/* Layout: the whole screen is the lamp; a dim glass panel at the bottom hides itself after a few seconds */
+:root {
+  --panel: rgb(20 16 12 / .72);
+  --panel-line: rgb(255 230 200 / .14);
+  --ink: #f6eadb;
+  --ink-dim: #bfae98;
+  --amber: #ffb35c;
+  --track: rgb(255 230 200 / .18);
+  --font: "Nunito", system-ui, -apple-system, sans-serif;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body {
+  background: #fff4e0;
+  color: var(--ink);
+  font-family: var(--font);
+  overflow: hidden;
+  touch-action: none;
+  user-select: none; -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color .25s linear;
+}
+#lamp { position: fixed; inset: 0; }
+
+.hint {
+  position: fixed; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 18px);
+  transform: translateX(-50%);
+  background: var(--panel); color: var(--ink);
+  padding: 8px 14px; border-radius: 999px; font-size: .9rem; font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  opacity: 0; transition: opacity .3s; pointer-events: none;
+}
+.hint.show { opacity: 1; }
+
+.panel {
+  position: fixed; left: 50%; bottom: 0; transform: translateX(-50%);
+  width: min(520px, 100%);
+  padding: 18px 20px calc(env(safe-area-inset-bottom, 0px) + 18px);
+  background: var(--panel);
+  border-top: 1px solid var(--panel-line);
+  border-radius: 22px 22px 0 0;
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  display: grid; gap: 16px;
+  transition: opacity .5s, transform .5s;
+}
+.panel.hidden { opacity: 0; transform: translate(-50%, 30px); pointer-events: none; }
+@media (min-width: 560px) { .panel { bottom: 16px; border-radius: 22px; border: 1px solid var(--panel-line); } }
+
+.row { display: grid; gap: 8px; }
+.row-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+label { font-weight: 800; font-size: .95rem; letter-spacing: .02em; }
+.val { color: var(--ink-dim); font-size: .9rem; font-variant-numeric: tabular-nums; }
+
+input[type=range] {
+  -webkit-appearance: none; appearance: none; width: 100%; height: 36px; background: transparent; margin: 0;
+}
+input[type=range]::-webkit-slider-runnable-track { height: 10px; border-radius: 999px; background: var(--track-bg, var(--track)); }
+input[type=range]::-moz-range-track { height: 10px; border-radius: 999px; background: var(--track-bg, var(--track)); }
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 30px; height: 30px; margin-top: -10px; border-radius: 50%;
+  background: var(--ink); border: 3px solid rgb(0 0 0 / .35); box-shadow: 0 2px 8px rgb(0 0 0 / .4);
+}
+input[type=range]::-moz-range-thumb {
+  width: 24px; height: 24px; border-radius: 50%; background: var(--ink); border: 3px solid rgb(0 0 0 / .35);
+}
+input[type=range]:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; border-radius: 8px; }
+#bright { --track-bg: linear-gradient(90deg, #1a1410, #fff4e0); }
+#warm   { --track-bg: linear-gradient(90deg, #dfe9ff, #fff4e0, #ffb35c, #ff6a1a); }
+
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  font: inherit; font-weight: 700; font-size: .9rem; color: var(--ink);
+  background: transparent; border: 1px solid var(--panel-line); border-radius: 999px;
+  padding: 9px 14px; cursor: pointer;
+}
+.chip[aria-pressed="true"] { background: var(--ink); color: #1a1410; border-color: var(--ink); }
+.chip:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+.chip.timer { margin-left: auto; font-variant-numeric: tabular-nums; }
+.foot { color: var(--ink-dim); font-size: .8rem; line-height: 1.4; margin: 0; }
+
+@media (prefers-reduced-motion: reduce) { body, .panel, .hint { transition: none; } }
+</style>
+</head>
+<body>
+
+<div id="lamp" aria-hidden="true"></div>
+<div class="hint" id="hint">Helligkeit 60 %</div>
+
+<div class="panel" id="panel" role="region" aria-label="Leselicht einstellen">
+  <div class="row">
+    <div class="row-head"><label for="bright">Helligkeit</label><span class="val" id="brightVal">60 %</span></div>
+    <input type="range" id="bright" min="1" max="100" value="60">
+  </div>
+  <div class="row">
+    <div class="row-head"><label for="warm">Lichtfarbe</label><span class="val" id="warmVal">2700 K</span></div>
+    <input type="range" id="warm" min="1200" max="6500" step="50" value="2700" dir="rtl">
+  </div>
+  <div class="chips">
+    <button class="chip" type="button" data-k="1800" data-b="18">Kerze</button>
+    <button class="chip" type="button" data-k="2700" data-b="45">Warm</button>
+    <button class="chip" type="button" data-k="4000" data-b="70">Neutral</button>
+    <button class="chip timer" type="button" id="timer" aria-label="Ausschalt-Timer">Timer aus</button>
+  </div>
+  <p class="foot">Tippe auf das Licht, um diese Leiste ein- oder auszublenden. Wische auf dem Licht hoch oder runter, um die Helligkeit zu ändern.</p>
+</div>
+
+<script>
+(function () {
+  const $ = id => document.getElementById(id);
+  const bright = $('bright'), warm = $('warm'), panel = $('panel'), hint = $('hint'), timerBtn = $('timer');
+  const chips = [...document.querySelectorAll('.chip[data-k]')];
+
+  // Restore last setting (per device, best effort)
+  try {
+    const s = JSON.parse(localStorage.getItem('leselicht') || 'null');
+    if (s) { bright.value = s.b; warm.value = s.k; }
+  } catch (e) {}
+
+  // Colour temperature (Kelvin) to RGB, after Tanner Helland's approximation
+  function kelvin(k) {
+    const t = k / 100; let r, g, b;
+    r = t <= 66 ? 255 : 329.698727446 * Math.pow(t - 60, -0.1332047592);
+    g = t <= 66 ? 99.4708025861 * Math.log(t) - 161.1195681661 : 288.1221695283 * Math.pow(t - 60, -0.0755148492);
+    b = t >= 66 ? 255 : t <= 19 ? 0 : 138.5177312231 * Math.log(t - 10) - 305.0447927307;
+    const c = v => Math.max(0, Math.min(255, v));
+    return [c(r), c(g), c(b)];
+  }
+
+  let fade = 1; // used by the sleep timer
+  function render() {
+    const b = +bright.value, k = +warm.value;
+    const level = Math.pow(b / 100, 2.2) * fade; // perceptual curve: fine control in the dark range
+    const [r, g, bl] = kelvin(k).map(v => Math.round(v * level));
+    document.body.style.backgroundColor = `rgb(${r},${g},${bl})`;
+    $('brightVal').textContent = b + ' %';
+    $('warmVal').textContent = k + ' K';
+    chips.forEach(c => c.setAttribute('aria-pressed', String(+c.dataset.k === k && +c.dataset.b === b)));
+    try { localStorage.setItem('leselicht', JSON.stringify({ b, k })); } catch (e) {}
+  }
+
+  // Panel auto-hide
+  let hideT;
+  function showPanel() { panel.classList.remove('hidden'); clearTimeout(hideT); hideT = setTimeout(() => panel.classList.add('hidden'), 5000); }
+  panel.addEventListener('pointerdown', showPanel);
+  panel.addEventListener('input', showPanel);
+
+  // Tap toggles panel, vertical swipe changes brightness
+  const lamp = $('lamp');
+  let startY = null, startB = 0, moved = false, hintT;
+  lamp.addEventListener('pointerdown', e => { startY = e.clientY; startB = +bright.value; moved = false; lamp.setPointerCapture(e.pointerId); });
+  lamp.addEventListener('pointermove', e => {
+    if (startY === null) return;
+    const dy = startY - e.clientY;
+    if (Math.abs(dy) > 8) moved = true;
+    if (!moved) return;
+    bright.value = Math.max(1, Math.min(100, Math.round(startB + dy / (window.innerHeight * 0.6) * 100)));
+    render();
+    hint.textContent = 'Helligkeit ' + bright.value + ' %';
+    hint.classList.add('show'); clearTimeout(hintT); hintT = setTimeout(() => hint.classList.remove('show'), 900);
+  });
+  lamp.addEventListener('pointerup', () => {
+    if (!moved) { panel.classList.contains('hidden') ? showPanel() : (clearTimeout(hideT), panel.classList.add('hidden')); }
+    startY = null;
+  });
+
+  bright.addEventListener('input', render);
+  warm.addEventListener('input', render);
+  chips.forEach(c => c.addEventListener('click', () => { warm.value = c.dataset.k; bright.value = c.dataset.b; render(); }));
+
+  // Sleep timer: fades out over the last minute, then goes dark
+  const steps = [0, 15, 30, 60]; let si = 0, endAt = 0, tick;
+  function updateTimer() {
+    if (!endAt) { timerBtn.textContent = 'Timer aus'; return; }
+    const left = endAt - Date.now();
+    if (left <= 0) { fade = 0; render(); timerBtn.textContent = 'Licht aus'; clearInterval(tick); endAt = 0; si = 0; return; }
+    fade = Math.min(1, left / 60000);
+    render();
+    timerBtn.textContent = 'Aus in ' + Math.ceil(left / 60000) + ' Min';
+  }
+  timerBtn.addEventListener('click', () => {
+    si = (si + 1) % steps.length; fade = 1; clearInterval(tick);
+    endAt = steps[si] ? Date.now() + steps[si] * 60000 : 0;
+    if (endAt) tick = setInterval(updateTimer, 1000);
+    updateTimer(); render();
+  });
+
+  // Keep the screen awake while the lamp is visible
+  let lock = null;
+  async function wake() {
+    try { if ('wakeLock' in navigator && document.visibilityState === 'visible') lock = await navigator.wakeLock.request('screen'); } catch (e) {}
+  }
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') wake(); });
+  document.addEventListener('pointerdown', () => { if (!lock || lock.released) wake(); }, { once: false });
+  wake();
+
+  render();
+  showPanel();
+})();
+</script>
+</body>
+</html>

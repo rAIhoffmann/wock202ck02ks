@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="38%" r="80%">
+      <stop offset="0" stop-color="#3a2a1c"/>
+      <stop offset="1" stop-color="#15100b"/>
+    </radialGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#ffd79a" stop-opacity=".9"/>
+      <stop offset="1" stop-color="#ffb35c" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <circle cx="256" cy="230" r="190" fill="url(#glow)"/>
+  <!-- crescent moon -->
+  <path d="M296 120 a110 110 0 1 0 96 150 a90 90 0 1 1 -96 -150z" fill="#fff4e0"/>
+  <!-- open book -->
+  <path d="M96 352 q80 -30 160 10 v80 q-80 -40 -160 -10z" fill="#ffcf8a"/>
+  <path d="M416 352 q-80 -30 -160 10 v80 q80 -40 160 -10z" fill="#ffb35c"/>
+  <path d="M256 362 v80" stroke="#15100b" stroke-width="6" stroke-linecap="round"/>
+  <!-- stars -->
+  <circle cx="140" cy="140" r="6" fill="#fff4e0" opacity=".8"/>
+  <circle cx="110" cy="230" r="4" fill="#fff4e0" opacity=".6"/>
+  <circle cx="410" cy="110" r="5" fill="#fff4e0" opacity=".7"/>
+</svg>
